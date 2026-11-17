@@ -14,10 +14,10 @@ print(df)
 
 # ----- features.py -----
 from datetime import timedelta
-from feast import Entity, FeatureView, Field, FileSource
+from feast import Entity, FeatureView, Field, FileSource, ValueType
 from feast.types import Float32
 
-student = Entity(name="student_id", join_keys=["student_id"])
+student = Entity(name="student_id", join_keys=["student_id"], value_type=ValueType.STRING)
 source = FileSource(path="data/student_data.parquet", timestamp_field="event_timestamp")
 
 student_features = FeatureView(
@@ -41,11 +41,16 @@ features = store.get_online_features(
 ).to_dict()
 print(features)
 
+# ----- .feastignore -----
+create_data.py
+get_features.py
+
 # ----- Commands -----
 pip install feast pandas pyarrow
 feast init feature_repo
-cd feature_repo
-# create the 3 files above, then:
+cd feature_repo/feature_repo     # new Feast puts feature_store.yaml one folder deeper
+rm feature_definitions.py        # remove Feast's example (driver) features
+# create the 4 files above, then:
 python create_data.py
 feast apply
 feast materialize 2026-08-31T00:00:00 2026-09-02T00:00:00
