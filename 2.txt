@@ -1,24 +1,21 @@
-import java.util.Scanner;
-
-public class FactFib {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        System.out.print("Enter n: ");
-        int n = sc.nextInt();
-
-        long fact = 1;
-        for (int i = 2; i <= n; i++) fact *= i;
-        System.out.println("Factorial of " + n + " = " + fact);
-
-        System.out.print("Fibonacci series: ");
-        long a = 0, b = 1;
-        for (int i = 0; i < n; i++) {
-            System.out.print(a + " ");
-            long c = a + b;
-            a = b;
-            b = c;
-        }
-        System.out.println();
-        sc.close();
-    }
-}
+# ===== Practical 2 - Git (run in Git Bash) =====
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+mkdir ml_project
+cd ml_project
+git init
+git branch -M master
+echo 'print("Initial ML Model")' > train.py
+git add .
+git commit -m "Initial commit"
+git checkout -b feature-model
+echo 'print("Feature Version")' > train.py
+git commit -am "Feature update"
+git checkout master
+echo 'print("Master Version")' > train.py
+git commit -am "Master update"
+git merge feature-model
+# conflict: edit train.py, keep both print lines, then:
+git add train.py
+git commit -m "Merge feature-model into master"
+git log --oneline --graph --all

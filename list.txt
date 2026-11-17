@@ -1,5 +1,9 @@
 # Practical list  ->  number | title | file name it is saved as
 # To add a practical: add a line here AND a file named <number>.txt with the code.
-1 | Hello World and basic input/output | HelloWorld.java
-2 | Factorial and Fibonacci using loops | FactFib.java
-3 | Student result analysis using arrays | ResultAnalysis.java
+2 | Git - version control and branch merging | practical2_git.txt
+3 | DVC - data version control with Git | practical3_dvc.txt
+4 | Data collection and ML pipeline (DVC) | practical4_pipeline.txt
+5 | MLflow - experiment tracking | practical5_mlflow.txt
+6 | Feast - student feature store | practical6_feast.txt
+7 | Flask - student prediction REST API | practical7_flask.txt
+8 | Docker - containerize an ML app | practical8_docker.txt

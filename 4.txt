@@ -1,0 +1,62 @@
+# ===== Practical 4 - Data Collection & ML Pipeline =====
+
+# ----- data/raw.csv -----
+area,bedrooms,location,price
+1000,2,A,200000
+1500,3,B,300000
+1200,2,A,250000
+
+# ----- src/preprocess.py -----
+import pandas as pd
+df = pd.read_csv("data/raw.csv").dropna()
+df.to_csv("data/clean.csv", index=False)
+print("Preprocessing done")
+
+# ----- src/feature.py -----
+import pandas as pd
+df = pd.read_csv("data/clean.csv")
+df["location"] = df["location"].map({"A": 1, "B": 2})
+df.to_csv("data/featured.csv", index=False)
+print("Feature engineering done")
+
+# ----- src/validate.py -----
+import pandas as pd
+df = pd.read_csv("data/featured.csv")
+assert df.isnull().sum().sum() == 0, "Missing values found!"
+assert len(df) > 0, "Empty dataset!"
+print("Validation successful")
+
+# ----- src/train.py -----
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+df = pd.read_csv("data/featured.csv")
+model = LinearRegression().fit(df[["area", "bedrooms", "location"]], df["price"])
+print("Model trained")
+
+# ----- dvc.yaml -----
+stages:
+  preprocess:
+    cmd: python src/preprocess.py
+    deps: [data/raw.csv]
+    outs: [data/clean.csv]
+  feature:
+    cmd: python src/feature.py
+    deps: [data/clean.csv]
+    outs: [data/featured.csv]
+  validate:
+    cmd: python src/validate.py
+    deps: [data/featured.csv]
+  train:
+    cmd: python src/train.py
+    deps: [data/featured.csv]
+
+# ----- Commands -----
+mkdir project
+cd project
+mkdir data src
+# create the files above, then:
+git init
+dvc init
+dvc repro
+git add .
+git commit -m "Create ML pipeline with DVC"

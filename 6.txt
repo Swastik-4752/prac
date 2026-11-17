@@ -1,0 +1,52 @@
+# ===== Practical 6 - Feast =====
+
+# ----- create_data.py -----
+import pandas as pd
+df = pd.DataFrame({
+    "student_id": ["S1", "S2", "S3", "S4"],
+    "attendance": [85, 70, 92, 65],
+    "study_hours": [4, 2, 5, 1],
+    "previous_marks": [72, 60, 85, 55],
+    "event_timestamp": pd.to_datetime(["2026-09-01"] * 4),
+})
+df.to_parquet("data/student_data.parquet", index=False)
+print(df)
+
+# ----- features.py -----
+from datetime import timedelta
+from feast import Entity, FeatureView, Field, FileSource
+from feast.types import Float32
+
+student = Entity(name="student_id", join_keys=["student_id"])
+source = FileSource(path="data/student_data.parquet", timestamp_field="event_timestamp")
+
+student_features = FeatureView(
+    name="student_features",
+    entities=[student],
+    ttl=timedelta(days=365),
+    schema=[
+        Field(name="attendance", dtype=Float32),
+        Field(name="study_hours", dtype=Float32),
+        Field(name="previous_marks", dtype=Float32),
+    ],
+    source=source,
+)
+
+# ----- get_features.py -----
+from feast import FeatureStore
+store = FeatureStore(repo_path=".")
+features = store.get_online_features(
+    features=["student_features:attendance", "student_features:study_hours", "student_features:previous_marks"],
+    entity_rows=[{"student_id": "S3"}],
+).to_dict()
+print(features)
+
+# ----- Commands -----
+pip install feast pandas pyarrow
+feast init feature_repo
+cd feature_repo
+# create the 3 files above, then:
+python create_data.py
+feast apply
+feast materialize 2026-08-31T00:00:00 2026-09-02T00:00:00
+python get_features.py

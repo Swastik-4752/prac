@@ -1,27 +1,16 @@
-import java.util.Scanner;
-
-public class ResultAnalysis {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        System.out.print("Number of students: ");
-        int n = sc.nextInt();
-        int[] marks = new int[n];
-        int total = 0, max = Integer.MIN_VALUE, min = Integer.MAX_VALUE, pass = 0;
-
-        for (int i = 0; i < n; i++) {
-            System.out.print("Marks of student " + (i + 1) + ": ");
-            marks[i] = sc.nextInt();
-            total += marks[i];
-            max = Math.max(max, marks[i]);
-            min = Math.min(min, marks[i]);
-            if (marks[i] >= 40) pass++;
-        }
-
-        System.out.println("\n--- Result Analysis ---");
-        System.out.printf("Average : %.2f%n", (double) total / n);
-        System.out.println("Highest : " + max);
-        System.out.println("Lowest  : " + min);
-        System.out.println("Passed  : " + pass + " / " + n);
-        sc.close();
-    }
-}
+# ===== Practical 3 - DVC (run in Git Bash) =====
+pip install dvc
+mkdir dvc-demo
+cd dvc-demo
+git init
+dvc init
+echo "This is my dataset" > data.txt
+dvc add data.txt
+git add data.txt.dvc .gitignore
+git commit -m "Track data with DVC"
+mkdir storage
+dvc remote add -d localstore storage
+dvc push
+rm data.txt
+dvc pull
+cat data.txt

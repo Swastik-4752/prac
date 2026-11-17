@@ -1,0 +1,33 @@
+# ===== Practical 5 - MLflow =====
+
+# ----- train.py -----
+import os
+import mlflow
+import mlflow.sklearn
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+
+os.environ["MLFLOW_ALLOW_FILE_STORE"] = "true"
+mlflow.set_tracking_uri("file:./mlruns")
+mlflow.set_experiment("MLflow-Practical")
+
+X, y = load_iris(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+for depth in [2, 3, 5]:
+    with mlflow.start_run():
+        model = DecisionTreeClassifier(max_depth=depth).fit(X_train, y_train)
+        acc = model.score(X_test, y_test)
+        mlflow.log_param("max_depth", depth)
+        mlflow.log_metric("accuracy", acc)
+        mlflow.sklearn.log_model(model, "model")
+        print("Depth:", depth, "Accuracy:", acc)
+
+# ----- Commands -----
+pip install mlflow scikit-learn
+mkdir mlflow_practical
+cd mlflow_practical
+# create train.py, then:
+python train.py
+mlflow ui            # open http://127.0.0.1:5000

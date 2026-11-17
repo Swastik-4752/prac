@@ -26,8 +26,8 @@ Linux/macOS shortcut: add to `~/.bashrc` → `alias prac='curl -fsSL https://swa
 
 ## Adding a practical
 
-1. Put the code in `4.txt` (next free number).
-2. Add a line to `list.txt`: `4 | Title of practical | ClassName.java`
+1. Put the code in `9.txt` (next free number; `1.txt` is also free).
+2. Add a line to `list.txt`: `9 | Title of practical | practical9_name.txt`
 3. Push to GitHub. Students get it on their next run — nothing to reinstall.
 
 ## Hosting (free, GitHub Pages)

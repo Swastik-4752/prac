@@ -1,0 +1,27 @@
+# ===== Practical 8 - Docker =====
+
+# ----- app.py -----
+print("Machine Learning Model Running Successfully!")
+
+# ----- requirements.txt -----
+numpy
+pandas
+
+# ----- Dockerfile -----
+FROM python:3.10
+WORKDIR /app
+COPY . /app
+RUN pip install -r requirements.txt
+CMD ["python", "app.py"]
+
+# ----- Commands -----
+mkdir ml-docker-project
+cd ml-docker-project
+# create the 3 files above, then:
+docker build -t ml-app .
+docker images
+docker run --name ml-app-container ml-app
+docker ps -a
+# change the message in app.py, then:
+docker build -t ml-app .
+docker run --rm ml-app

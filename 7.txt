@@ -1,0 +1,30 @@
+# ===== Practical 7 - Flask =====
+
+# ----- app.py -----
+from flask import Flask, request, jsonify
+
+app = Flask("Flask_Practical")
+
+@app.route("/")
+def home():
+    return "Student Prediction API is Running"
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    data = request.get_json()
+    if data["attendance"] >= 75 and data["study_hours"] >= 2 and data["previous_marks"] >= 50:
+        data["prediction"] = "PASS"
+    else:
+        data["prediction"] = "NEEDS IMPROVEMENT"
+    return jsonify(data)
+
+app.run(debug=True)
+
+# ----- Commands -----
+pip install flask
+python app.py        # open http://127.0.0.1:5000
+winget install --id Postman.Postman -e
+
+# ----- Postman: POST http://127.0.0.1:5000/predict  (Body -> raw -> JSON) -----
+{ "attendance": 85, "study_hours": 3, "previous_marks": 65 }    -> PASS
+{ "attendance": 60, "study_hours": 1, "previous_marks": 40 }    -> NEEDS IMPROVEMENT
