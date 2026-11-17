@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# prac - practical code loader for Linux / macOS / Git Bash
+# Run:   curl -fsSL https://swastik-4752.github.io/prac/l.txt | bash          (menu)
+#        curl -fsSL https://swastik-4752.github.io/prac/l.txt | bash -s 2     (practical 2)
+BASE="${PRAC_BASE:-https://swastik-4752.github.io/prac}"
+BASE="${BASE%/}"
+C='\033[36m'; Y='\033[33m'; G='\033[32m'; R='\033[31m'; N='\033[0m'
+
+fetch() { curl -fsSL "$BASE/$1"; }
+# The script itself arrives on stdin, so questions are read from the keyboard (/dev/tty).
+ask() { local a=""; printf '%s' "$1" > /dev/tty; read -r a < /dev/tty || true; printf '%s' "$a"; }
+
+list=$(fetch list.txt) || { printf "${R}Could not reach %s (check your internet)${N}\n" "$BASE"; exit 1; }
+list=$(printf '%s\n' "$list" | tr -d '\r' | grep -v '^[[:space:]]*#' | grep '|')
+trim() { sed 's/^[[:space:]]*//;s/[[:space:]]*$//'; }
+
+pick="${1:-}"; quick=1
+if [ -z "$pick" ]; then
+  quick=0
+  printf "\n  ${C}==== PRACTICALS ====${N}\n"
+  while IFS='|' read -r no title file; do
+    printf "  ${Y}%3s.${N}  %s\n" "$(printf '%s' "$no" | trim)" "$(printf '%s' "$title" | trim)"
+  done <<< "$list"
+  echo
+  pick=$(ask "  Enter practical number (q to quit): " | trim)
+  { [ -z "$pick" ] || [ "$pick" = q ]; } && exit 0
+fi
+
+line=$(printf '%s\n' "$list" | awk -F'|' -v p="$pick" '{n=$1; gsub(/^[ \t]+|[ \t]+$/,"",n)} n==p {print; exit}')
+[ -z "$line" ] && { printf "  ${R}No practical number '%s'.${N}\n" "$pick"; exit 1; }
+title=$(printf '%s' "$line" | cut -d'|' -f2 | trim)
+file=$(printf '%s' "$line" | cut -d'|' -f3 | trim)
+
+code=$(fetch "$pick.txt") || { printf "  ${R}Practical %s file is missing on the site.${N}\n" "$pick"; exit 1; }
+code=$(printf '%s\n' "$code" | tr -d '\r')
+
+printf "\n  ${C}---- %s. %s  [%s] ----${N}\n\n" "$pick" "$title" "$file"
+printf '%s\n' "$code"
+printf "  ${C}---- end of %s ----${N}\n" "$file"
+
+for clip in pbcopy "xclip -selection clipboard" "wl-copy" clip.exe; do
+  command -v ${clip%% *} >/dev/null 2>&1 && { printf '%s\n' "$code" | $clip 2>/dev/null && printf "  ${G}Copied to clipboard.${N}\n"; break; }
+done
+
+save=1
+if [ "$quick" = 1 ]; then
+  [ -e "$file" ] && { save=0; printf "  ${Y}%s already exists here - not overwritten.${N}\n" "$file"; }
+elif [ -e "$file" ]; then
+  a=$(ask "  $file already exists. Overwrite? (y/N) "); [ "$a" = y ] || save=0
+else
+  a=$(ask "  Save as $file in this folder? (Y/n) "); [ "$a" = n ] && save=0
+fi
+[ "$save" = 1 ] && printf '%s\n' "$code" > "$file" && printf "  ${G}Saved: %s/%s${N}\n" "$PWD" "$file"
+exit 0

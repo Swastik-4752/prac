@@ -1,0 +1,27 @@
+# prac installer for Windows - after this, type  prac  (or  prac 2) in any cmd / PowerShell window.
+# Run:   irm https://swastik-4752.github.io/prac/install.txt | iex
+& {
+    $Base = 'https://swastik-4752.github.io/prac'
+    $cmd = "@echo off`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"`$env:PRAC_N='%~1'; irm '$Base/w.txt' | iex`"`r`n"
+
+    # WindowsApps is already on every user's PATH on Windows 10/11, so prac works at once.
+    $dir = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps'
+    $onPath = ($env:Path -split ';') -contains $dir
+    if (-not ((Test-Path $dir) -and $onPath)) {
+        $dir = Join-Path $env:USERPROFILE '.prac'
+        New-Item -ItemType Directory -Force -Path $dir | Out-Null
+        $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+        if (($userPath -split ';') -notcontains $dir) {
+            [Environment]::SetEnvironmentVariable('Path', ($userPath.TrimEnd(';') + ';' + $dir), 'User')
+        }
+        $env:Path += ";$dir"
+        Write-Host '  (Open a new terminal window if prac is not found.)' -ForegroundColor Yellow
+    }
+
+    [IO.File]::WriteAllText((Join-Path $dir 'prac.cmd'), $cmd, (New-Object Text.ASCIIEncoding))
+    Write-Host ''
+    Write-Host '  Installed!  Now type:' -ForegroundColor Green
+    Write-Host '     prac        -> menu of practicals'
+    Write-Host '     prac 2      -> straight to practical 2'
+    Write-Host ''
+}

@@ -1,0 +1,75 @@
+# prac - practical code loader for Windows (PowerShell 5.1+ and PowerShell 7)
+# Run:   irm https://swastik-4752.github.io/prac/w.txt | iex
+& {
+    $ErrorActionPreference = 'Stop'
+    $Base = 'https://swastik-4752.github.io/prac'
+    if ($env:PRAC_BASE) { $Base = $env:PRAC_BASE.TrimEnd('/') }
+
+    # Number given up front (prac 2) skips the menu and the questions.
+    $pick = "$env:PRAC_N".Trim()
+    Remove-Item Env:PRAC_N -ErrorAction SilentlyContinue
+    $quick = [bool]$pick
+
+    # Old Windows PowerShell needs TLS 1.2 switched on for https sites.
+    try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072 } catch {}
+
+    function Get-Text([string]$name) {
+        $r = Invoke-WebRequest -UseBasicParsing -Uri "$Base/$name"
+        if ($r.Content -is [byte[]]) { return [Text.Encoding]::UTF8.GetString($r.Content) }
+        return [string]$r.Content
+    }
+
+    try { $raw = Get-Text 'list.txt' }
+    catch { Write-Host "Could not reach $Base  (check your internet)" -ForegroundColor Red; return }
+
+    $items = @()
+    foreach ($line in ($raw -split "`r?`n")) {
+        $t = $line.Trim()
+        if (-not $t -or $t.StartsWith('#')) { continue }
+        $p = $t.Split('|')
+        if ($p.Count -lt 3) { continue }
+        $items += [pscustomobject]@{ No = $p[0].Trim(); Title = $p[1].Trim(); File = $p[2].Trim() }
+    }
+
+    if (-not $quick) {
+        Write-Host ''
+        Write-Host '  ==== PRACTICALS ====' -ForegroundColor Cyan
+        foreach ($i in $items) {
+            Write-Host ('  {0,3}.  ' -f $i.No) -ForegroundColor Yellow -NoNewline
+            Write-Host $i.Title
+        }
+        Write-Host ''
+        $pick = (Read-Host '  Enter practical number (q to quit)').Trim()
+        if (-not $pick -or $pick -eq 'q') { return }
+    }
+
+    $item = $items | Where-Object { $_.No -eq $pick } | Select-Object -First 1
+    if (-not $item) { Write-Host "  No practical number '$pick'." -ForegroundColor Red; return }
+
+    try { $code = Get-Text "$($item.No).txt" }
+    catch { Write-Host "  Practical $($item.No) file is missing on the site." -ForegroundColor Red; return }
+    $code = $code -replace "`r`n", "`n"
+
+    Write-Host ''
+    Write-Host "  ---- $($item.No). $($item.Title)  [$($item.File)] ----" -ForegroundColor Cyan
+    Write-Host ''
+    Write-Host $code
+    Write-Host "  ---- end of $($item.File) ----" -ForegroundColor Cyan
+
+    try { Set-Clipboard -Value $code; Write-Host '  Copied to clipboard.' -ForegroundColor Green } catch {}
+
+    $dest = Join-Path (Get-Location).ProviderPath $item.File
+    $save = $true
+    if ($quick) {
+        if (Test-Path -LiteralPath $dest) { $save = $false; Write-Host "  $($item.File) already exists here - not overwritten." -ForegroundColor Yellow }
+    } else {
+        $q = if (Test-Path -LiteralPath $dest) { "  $($item.File) already exists. Overwrite? (y/N)" } else { "  Save as $($item.File) in this folder? (Y/n)" }
+        $a = (Read-Host $q).Trim().ToLower()
+        if (Test-Path -LiteralPath $dest) { $save = ($a -eq 'y') } else { $save = ($a -ne 'n') }
+    }
+    if ($save) {
+        # UTF-8 without BOM: javac rejects a BOM.
+        [IO.File]::WriteAllText($dest, $code, (New-Object Text.UTF8Encoding $false))
+        Write-Host "  Saved: $dest" -ForegroundColor Green
+    }
+}

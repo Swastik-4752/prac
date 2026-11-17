@@ -1,0 +1,5 @@
+# Practical list  ->  number | title | file name it is saved as
+# To add a practical: add a line here AND a file named <number>.txt with the code.
+1 | Hello World and basic input/output | HelloWorld.java
+2 | Factorial and Fibonacci using loops | FactFib.java
+3 | Student result analysis using arrays | ResultAnalysis.java
