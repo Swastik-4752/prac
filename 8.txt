@@ -22,6 +22,7 @@ docker build -t ml-app .
 docker images
 docker run --name ml-app-container ml-app
 docker ps -a
-# change the message in app.py, then:
+# change the message in app.py and rebuild:
+echo 'print("Updated ML Model Running in Docker!")' > app.py
 docker build -t ml-app .
 docker run --rm ml-app

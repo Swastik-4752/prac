@@ -3,6 +3,11 @@
 Students type one command in any terminal, pick a practical number, and the full
 code is printed in that same terminal, copied to the clipboard, and saved as a file.
 
+Then it asks **"Run practical now? (y/N)"**. On `y` it creates every file of the practical
+in the current folder and runs all its commands in a NEW terminal window (Git Bash on
+Windows), and closes the window the student started from. `prac 2` (number given up
+front) only shows and saves — it never runs anything.
+
 | Where | Command |
 |---|---|
 | Windows PowerShell | `irm https://swastik-4752.github.io/prac/w.txt \| iex` |
@@ -21,7 +26,12 @@ Linux/macOS shortcut: add to `~/.bashrc` → `alias prac='curl -fsSL https://swa
 | `1.txt`, `2.txt`, … | The code for each practical |
 | `w.txt` | Windows loader (PowerShell) |
 | `l.txt` | Linux / macOS loader (bash) |
+| `run.txt` | Runner: writes a practical's files and runs its commands (bash) |
 | `install.txt` | Puts a `prac.cmd` on the Windows PATH |
+
+Practical file format the runner reads: `# ----- path/file.py -----` starts a file,
+`# ----- Commands -----` starts commands (also the default), a header with spaces in it
+is notes only, and the comment `# create ... then:` in the commands is where the files get written.
 | `index.html` | Web page with copy buttons and the practical list |
 
 ## Adding a practical

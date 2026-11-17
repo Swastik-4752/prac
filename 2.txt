@@ -15,7 +15,8 @@ git checkout master
 echo 'print("Master Version")' > train.py
 git commit -am "Master update"
 git merge feature-model
-# conflict: edit train.py, keep both print lines, then:
+# conflict! keep both print lines in train.py:
+printf 'print("Master Version")\nprint("Feature Version")\n' > train.py
 git add train.py
 git commit -m "Merge feature-model into master"
 git log --oneline --graph --all

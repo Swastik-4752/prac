@@ -72,4 +72,50 @@
         [IO.File]::WriteAllText($dest, $code, (New-Object Text.UTF8Encoding $false))
         Write-Host "  Saved: $dest" -ForegroundColor Green
     }
+
+    # ---- Run it: create all files + run all commands in a NEW Git Bash window, then close this one ----
+    if ($quick) { return }
+    Write-Host ''
+    Write-Host '  Run it now? This creates all the files in this folder, runs every command' -ForegroundColor Yellow
+    Write-Host '  (installs too) in a NEW terminal window, and closes this window.' -ForegroundColor Yellow
+    if ((Read-Host '  Run practical now? (y/N)').Trim().ToLower() -ne 'y') { return }
+
+    # The commands are Git Bash commands, so find Git Bash (comes with Git for Windows).
+    $bash = $null
+    $git = Get-Command git.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($git) { $bash = Join-Path (Split-Path (Split-Path $git.Source)) 'bin\bash.exe' }
+    if (-not ($bash -and (Test-Path $bash))) { $bash = Join-Path $env:ProgramFiles 'Git\bin\bash.exe' }
+    if (-not (Test-Path $bash)) {
+        Write-Host '  Git Bash not found. Install Git for Windows (git-scm.com), then try again.' -ForegroundColor Red
+        return
+    }
+
+    $tmp = Join-Path $env:TEMP 'prac'
+    New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+    $codeFile = Join-Path $tmp "practical$($item.No).txt"
+    $runFile = Join-Path $tmp 'run.sh'
+    $utf8 = New-Object Text.UTF8Encoding $false
+    [IO.File]::WriteAllText($codeFile, $code, $utf8)
+    try { [IO.File]::WriteAllText($runFile, ((Get-Text 'run.txt') -replace "`r`n", "`n"), $utf8) }
+    catch { Write-Host '  Could not download the runner.' -ForegroundColor Red; return }
+
+    $here = (Get-Location).ProviderPath
+    $q = { param($p) '"' + ($p -replace '\\', '/') + '"' }
+    $env:CHERE_INVOKING = '1'   # keep Git Bash in this folder instead of jumping to home
+    Start-Process -FilePath $bash -WorkingDirectory $here -ArgumentList ('--login ' + (& $q $runFile) + ' ' + (& $q $codeFile) + ' ' + (& $q $here))
+    Write-Host '  Started in a new window. Closing this one...' -ForegroundColor Green
+    Start-Sleep -Seconds 2
+
+    # Close this terminal: stop this shell and the shells that started it (cmd / PowerShell).
+    $ids = @($PID)
+    $p = Get-CimInstance Win32_Process -Filter "ProcessId=$PID"
+    while ($p) {
+        $parent = Get-CimInstance Win32_Process -Filter "ProcessId=$($p.ParentProcessId)"
+        if (-not $parent -or $parent.Name -notmatch '^(powershell|pwsh|cmd)\.exe$') { break }
+        $ids += $parent.ProcessId
+        $p = $parent
+    }
+    if ($env:PRAC_NOCLOSE) { Write-Host "  (test) would close: $($ids -join ', ')"; return }
+    [array]::Reverse($ids)
+    foreach ($id in $ids) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue }
 }

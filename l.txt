@@ -51,4 +51,37 @@ else
   a=$(ask "  Save as $file in this folder? (Y/n) "); [ "$a" = n ] && save=0
 fi
 [ "$save" = 1 ] && printf '%s\n' "$code" > "$file" && printf "  ${G}Saved: %s/%s${N}\n" "$PWD" "$file"
+
+# ---- Run it: create all files + run all commands in a NEW terminal, then close this one ----
+[ "$quick" = 1 ] && exit 0
+printf "\n  ${Y}Run it now? This creates all the files in this folder, runs every command${N}\n"
+printf "  ${Y}(installs too) in a NEW terminal window, and closes this one.${N}\n"
+a=$(ask "  Run practical now? (y/N) "); [ "$a" = y ] || exit 0
+
+tmp="${TMPDIR:-/tmp}/prac"; mkdir -p "$tmp"
+printf '%s\n' "$code" > "$tmp/practical$pick.txt"
+fetch run.txt | tr -d '\r' > "$tmp/run.sh" || { printf "  ${R}Could not download the runner.${N}\n"; exit 1; }
+run="bash '$tmp/run.sh' '$tmp/practical$pick.txt' '$PWD'"
+
+opened=1
+case "$(uname -s)" in
+  Darwin) osascript -e "tell application \"Terminal\" to do script \"$run\"" >/dev/null ;;
+  MINGW*|MSYS*) CHERE_INVOKING=1 mintty /usr/bin/bash --login -c "$run" >/dev/null 2>&1 & ;;
+  *) opened=0
+     for t in x-terminal-emulator gnome-terminal konsole xfce4-terminal xterm; do
+       command -v "$t" >/dev/null 2>&1 || continue
+       if [ "$t" = gnome-terminal ]; then gnome-terminal -- bash -c "$run" >/dev/null 2>&1 &
+       else "$t" -e bash -c "$run" >/dev/null 2>&1 & fi
+       opened=1; break
+     done ;;
+esac
+
+if [ "$opened" = 1 ]; then
+  printf "  ${G}Started in a new window. Closing this one...${N}\n"; sleep 2
+  [ -n "$PRAC_NOCLOSE" ] && { echo "  (test) would close shell $PPID"; exit 0; }
+  kill -HUP "$PPID" 2>/dev/null
+else
+  printf "  ${Y}No new terminal could be opened - running here instead.${N}\n"
+  exec bash "$tmp/run.sh" "$tmp/practical$pick.txt" "$PWD" < /dev/tty
+fi
 exit 0

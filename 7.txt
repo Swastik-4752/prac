@@ -22,9 +22,13 @@ app.run(debug=True)
 
 # ----- Commands -----
 pip install flask
+mkdir flask_practical
+cd flask_practical
+# create app.py, then:
 python app.py        # open http://127.0.0.1:5000
-winget install --id Postman.Postman -e
 
-# ----- Postman: POST http://127.0.0.1:5000/predict  (Body -> raw -> JSON) -----
+# ----- Postman test (do by hand) -----
+winget install --id Postman.Postman -e
+POST http://127.0.0.1:5000/predict   (Body -> raw -> JSON)
 { "attendance": 85, "study_hours": 3, "previous_marks": 65 }    -> PASS
 { "attendance": 60, "study_hours": 1, "previous_marks": 40 }    -> NEEDS IMPROVEMENT

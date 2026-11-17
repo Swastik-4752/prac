@@ -51,6 +51,7 @@ stages:
     deps: [data/featured.csv]
 
 # ----- Commands -----
+pip install dvc pandas scikit-learn
 mkdir project
 cd project
 mkdir data src

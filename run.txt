@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# prac runner - creates every file of a practical and runs its commands one by one.
+# Usage:  bash run.sh <practical.txt> <folder to work in>
+# The loaders (w.txt / l.txt) start this in a NEW terminal when the student answers "y".
+#
+# Practical file format:
+#   # ----- path/to/file.py -----   lines below are that file's content
+#   # ----- Commands -----          lines below are commands (also the default with no header)
+#   # ----- Some words here -----   anything else is notes only, never run
+#   "# create ... then:"             inside Commands: the moment all files are written
+
+code="$1"
+cd "$2" || { echo "Folder not found: $2"; exec bash -i; }
+Y='\033[33m'; C='\033[36m'; G='\033[32m'; N='\033[0m'
+
+files=(); contents=(); cmds=()
+section=cmd; name=""; buf=""
+save_section() {
+  # $(...) drops the blank lines that separate sections
+  [ "$section" = file ] && { files+=("$name"); contents+=("$(printf '%s' "$buf")"); }
+  buf=""
+}
+
+while IFS= read -r line || [ -n "$line" ]; do
+  line="${line%$'\r'}"
+  case "$line" in
+    "# ====="*) continue ;;
+    "# ----- "*" -----")
+      save_section
+      head="${line#'# ----- '}"; head="${head%' -----'}"
+      if [ "$head" = "Commands" ]; then section=cmd
+      elif [[ "$head" != *" "* ]]; then section=file; name="$head"
+      else section=skip; fi
+      continue ;;
+  esac
+  case "$section" in
+    file) buf+="$line"$'\n' ;;
+    cmd)  [ -n "${line// /}" ] && cmds+=("$line") ;;
+  esac
+done < "$code"
+save_section
+
+write_files() {
+  for i in "${!files[@]}"; do
+    mkdir -p "$(dirname "${files[$i]}")"
+    printf '%s\n' "${contents[$i]}" > "${files[$i]}"
+    printf "${G}  created %s${N}\n" "${files[$i]}"
+  done
+  written=1
+}
+
+# A commit needs a Git name/email. Keep the student's own if they have one.
+if (cd / && git config --global user.name >/dev/null 2>&1); then has_id=1; else
+  has_id=0
+  export GIT_AUTHOR_NAME="Student" GIT_COMMITTER_NAME="Student"
+  export GIT_AUTHOR_EMAIL="student@example.com" GIT_COMMITTER_EMAIL="student@example.com"
+fi
+
+written=0
+marker=0
+for c in "${cmds[@]}"; do [[ "$c" =~ ^#\ create.*then: ]] && marker=1; done
+[ "$marker" = 0 ] && [ "${#files[@]}" -gt 0 ] && write_files
+
+printf "\n${C}==== Running practical in: %s ====${N}\n" "$PWD"
+for c in "${cmds[@]}"; do
+  if [[ "$c" =~ ^#\ create.*then: ]]; then write_files; continue; fi
+  if [[ "$c" == "#"* ]]; then printf "\n${C}%s${N}\n" "$c"; continue; fi
+  if [[ "$c" == "git config --global user."* ]] && [ "$has_id" = 1 ]; then
+    printf "\n${C}# skipped, your Git name/email is already set: %s${N}\n" "$c"; continue
+  fi
+  printf "\n${Y}\$ %s${N}\n" "$c"
+  [ -n "$PRAC_DRY" ] && continue
+  eval "$c"
+done
+
+printf "\n${G}==== Done. This terminal stays open in: %s ====${N}\n" "$PWD"
+[ -z "$PRAC_NOSHELL" ] && exec bash -i
